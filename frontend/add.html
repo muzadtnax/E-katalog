@@ -61,7 +61,7 @@
                 <span id="alert-msg"></span>
             </div>
 
-            <form id="form-add-produk" method="POST" enctype="multipart/form-data" novalidate>
+            <form id="form-add-produk" novalidate>
 
                 <!-- Gambar -->
                 <div class="mb-3">
@@ -87,15 +87,13 @@
                             <i class="bi bi-camera"></i> Buka Kamera
                         </button>
                     </div>
-                    <input type="file" id="input-file" name="gambar" accept="image/*" style="display:none">
+                    <input type="file" id="input-file" accept="image/*" style="display:none">
                 </div>
 
                 <!-- Nama -->
                 <div class="mb-3">
                     <label class="form-label">Nama Produk <span class="req">*</span></label>
                     <input type="text" id="nama-produk" class="form-control" placeholder="Masukkan nama produk">
-                    <label class="form-label">Nama Produk <span style="color:#ff6b6b">*</span></label>
-                    <input type="text" id="nama-produk" name="nama_produk" class="form-control" placeholder="Masukkan nama produk">
                     <div class="err-msg">Nama produk wajib diisi.</div>
                 </div>
 
@@ -104,17 +102,13 @@
                     <div class="col-6">
                         <label class="form-label">Stok <span class="req">*</span></label>
                         <input type="text" inputmode="numeric" id="stok-produk" class="form-control" placeholder="0">
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Stok <span style="color:#ff6b6b">*</span></label>
-                        <input type="text" inputmode="numeric" id="stok-produk" name="stok" class="form-control" placeholder="0">
                         <div class="err-msg">Stok wajib diisi.</div>
                     </div>
                     <div class="col-6">
                         <label class="form-label">Harga <span class="req">*</span></label>
                         <div class="input-rp">
                             <span class="rp-prefix">Rp</span>
-                            <input type="text" inputmode="numeric" id="harga-produk" name="harga" class="form-control" placeholder="0">
+                            <input type="text" inputmode="numeric" id="harga-produk" class="form-control" placeholder="0">
                         </div>
                         <div class="err-msg">Harga wajib diisi.</div>
                     </div>
@@ -124,17 +118,9 @@
                 <div class="mb-4">
                     <label class="form-label">Kategori <span class="req">*</span></label>
                     <select id="kategori-produk" class="form-select">
-                    <label class="form-label">Kategori <span style="color:#ff6b6b">*</span></label>
-                    <select id="kategori-produk" name="kategori_id" class="form-select">
                         <option value="" disabled selected>Memuat kategori...</option>
                     </select>
                     <div class="err-msg">Kategori wajib dipilih.</div>
-                </div>
-
-                <!-- Deskripsi -->
-                <div class="mb-4">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea id="deskripsi-produk" name="deskripsi" class="form-control" placeholder="Masukkan deskripsi produk (opsional)" rows="4" style="resize: vertical; min-height: 100px;"></textarea>
                 </div>
 
                 <button type="submit" class="btn-save">Simpan Produk</button>
@@ -148,7 +134,6 @@
     <script src="js/api.js"></script>
     <script src="js/cropper-init.js"></script>
     <script>
-        // Validasi
         const form     = document.getElementById('form-add-produk');
         const alertBox = document.getElementById('alert-error');
         const alertMsg = document.getElementById('alert-msg');
@@ -182,7 +167,6 @@
             el.addEventListener('input', function() { this.classList.remove('is-invalid'); });
         });
 
-        // Stok — angka saja
         const stokEl = document.getElementById('stok-produk');
         stokEl.addEventListener('keydown', e => {
             if (['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key)) return;
@@ -190,7 +174,6 @@
         });
         stokEl.addEventListener('input', () => { stokEl.value = stokEl.value.replace(/\D/g,''); });
 
-        // Harga — format titik
         const hargaEl = document.getElementById('harga-produk');
         hargaEl.addEventListener('keydown', e => {
             if (['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key)) return;
@@ -201,7 +184,6 @@
             hargaEl.value = raw ? raw.replace(/\B(?=(\d{3})+(?!\d))/g,'.') : '';
         });
 
-        // Kamera
         let stream = null;
         document.getElementById('btn-open-camera').addEventListener('click', async () => {
             try {
@@ -217,7 +199,6 @@
             c.width = v.videoWidth; c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
             stopCam();
-            // Buka crop modal dengan hasil foto kamera
             openCropModal(c.toDataURL('image/jpeg'));
         });
 
@@ -227,7 +208,6 @@
             document.getElementById('camera-modal').style.display = 'none';
         }
 
-        // Init image picker & crop
         document.addEventListener('DOMContentLoaded', async () => {
             initImagePicker();
             if (typeof populateKategoriDropdown === 'function') await populateKategoriDropdown();
