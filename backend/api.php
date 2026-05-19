@@ -1,16 +1,19 @@
 <?php
 // === KONFIGURASI KEAMANAN DASAR (RESTRIKSI AKSES) ===
-$allowed_origins = [
-    // === DOMAIN PRODUKSI (Tambahkan domain Anda nanti di sini) ===
-    'https://e-katalog-frontend-saya.com',
-    'https://www.e-katalog-frontend-saya.com',
-    
+$allowed_origins_env = getenv('CORS_ALLOWED_ORIGINS') ?: '';
+$allowed_origins = $allowed_origins_env ? explode(',', $allowed_origins_env) : [
+    // === DOMAIN PRODUKSI NETLIFY ===
+    'https://ekatalog2.netlify.app',
+
+    // === DOMAIN RAILWAY ===
+    'https://e-katalog-production.railway.app',
+
     // === DOMAIN DEVELOPMENT (Lokal) ===
-    'http://localhost:3000', 
-    'http://localhost:5000', 
-    'http://127.0.0.1:3000', 
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'http://127.0.0.1:3000',
     'http://127.0.0.1:5000',
-    'http://localhost:8000' 
+    'http://localhost:8000'
 ];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -38,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // Token Rahasia API
-define('API_SECRET_KEY', 'ekatalog-secure-token-123');
+define('API_SECRET_KEY', getenv('API_SECRET_KEY') ?: 'ekatalog-secure-token-123');
 $apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['api_key'] ?? $_POST['api_key'] ?? '';
 
 if ($apiKey !== API_SECRET_KEY) {
@@ -72,6 +75,12 @@ function createConnection() {
 }
 
 function handleFileUpload($fieldName) {
+    require_once __DIR__ . '/file_upload_railway.php';
+    return handleFileUploadRailway($fieldName);
+}
+
+// Legacy function for backward compatibility
+function handleFileUploadLocal($fieldName) {
     if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
         return null;
     }
@@ -108,15 +117,22 @@ function fetchKategori($db) {
 }
 
 function fetchProduk($db) {
+    require_once __DIR__ . '/image_url_resolver.php';
+    
     try {
-        $stmt = $db->query("SELECT p.id_produk, p.nama_produk, p.harga, p.stok, p.deskripsi, p.gambar, k.id_kategori AS kategori_id, k.jenis_kategori FROM tb_produk p LEFT JOIN tb_produk_kategori pk ON p.id_produk = pk.id_produk LEFT JOIN tb_kategori k ON pk.id_kategori = k.id_kategori ORDER BY p.id_produk DESC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $db->query("SELECT p.id_produk, p.nama_produk, p.harga, p.stok, p.deskripsi, p.gambar, k.id_kategori AS kategori_id, k.jenis_kategori FROM tb_produk p LEFT JOIN tb_produk_kategori pk ON p.id_produk = pk.id_produk LEFT JOIN tb_kategori k ON pk.id_kategori = k.id_categoria ORDER BY p.id_produk DESC");
+        $produkList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Format image URLs for all products
+        return array_map('formatProdukWithImageUrl', $produkList);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
 }
 
 function fetchProdukById($db, $id) {
+    require_once __DIR__ . '/image_url_resolver.php';
+    
     try {
         $sql = "SELECT p.id_produk, p.nama_produk, p.harga, p.stok, p.deskripsi, p.gambar, k.id_kategori AS kategori_id, k.jenis_kategori FROM tb_produk p LEFT JOIN tb_produk_kategori pk ON p.id_produk = pk.id_produk LEFT JOIN tb_kategori k ON pk.id_kategori = k.id_kategori WHERE p.id_produk = ?";
         $stmt = $db->prepare($sql);
@@ -125,7 +141,8 @@ function fetchProdukById($db, $id) {
         if (!$result) {
             return ['error' => 'Produk tidak ditemukan'];
         }
-        return $result;
+        // Format image URL
+        return formatProdukWithImageUrl($result);
     } catch (Exception $e) {
         return ['error' => $e->getMessage()];
     }
@@ -310,6 +327,16 @@ if ($method === 'GET') {
                 break;
             }
             echo json_encode(fetchProdukById($db, $id));
+            break;
+        case 'getImage':
+            $tempId = $_GET['tempId'] ?? null;
+            if ($tempId) {
+                require_once __DIR__ . '/file_upload_railway.php';
+                serveTempImage($tempId);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'Missing tempId']);
+            }
             break;
         default:
             http_response_code(400);

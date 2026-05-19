@@ -1,0 +1,4 @@
+/api  https://e-katalog-production.up.railway.app/api.php  200
+/api/*  https://e-katalog-production.up.railway.app/api.php/:splat  200
+/api.php  https://e-katalog-production.up.railway.app/api.php  200
+/uploads/*  https://e-katalog-production.up.railway.app/uploads/:splat  200
