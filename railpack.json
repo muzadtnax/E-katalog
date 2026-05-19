@@ -1,0 +1,4 @@
+{
+  "provider": "dockerfile",
+  "dockerfile": "Dockerfile"
+}
